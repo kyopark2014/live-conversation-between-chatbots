@@ -144,9 +144,9 @@ def subscribe_redis(connectionId, redis_client, channel):
 
             result = {
                 'type': 'conversation',
-                'receiver_id': msg['request_id'],
+                'receiver_id': msg['receiver_id'],
                 'user_id': msg['user_id'],
-                'request_id': msg['receiver_id'],
+                'request_id': msg['request_id'],
                 'request_time': msg['request_time'],
                 'msg': msg['body'],
                 'status': 'completed'
