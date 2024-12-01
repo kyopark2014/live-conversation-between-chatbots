@@ -164,11 +164,11 @@ function connect(endpoint, type) {
                     let elapsed = (current - sentTime.get(response.request_id))/1000;
                     // console.log('elapsed time: ', elapsed);
                 }
-                // console.log('response: ', response);
+                console.log('received response: ', response);
 
                 if(response.status == 'completed') {          
                     feedback.style.display = 'none';          
-                    console.log('received message: ', response.msg);
+                    console.log('received message: ', response);
 
                     if(response.type == 'conversation') {
                         addReceivedMessage(response.request_id, response.msg);
