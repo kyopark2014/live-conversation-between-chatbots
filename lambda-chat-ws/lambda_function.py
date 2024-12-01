@@ -128,7 +128,7 @@ print('redisAddress: ',redisAddress)
 redisPort = os.environ.get('redisPort')
 print('redisPort: ',redisPort)
 
-def subscribe_redis(redis_client, channel):    
+def subscribe_redis(connectionId, redis_client, channel):    
     pubsub = redis_client.pubsub()
     pubsub.subscribe(channel)
     print('successfully subscribed for channel: ', channel)    
@@ -140,14 +140,17 @@ def subscribe_redis(redis_client, channel):
             msg = message['data'].encode('utf-8').decode('unicode_escape')
             # msg = msg[1:len(msg)-1]
             print('received msg: ', msg)    
+            
+            requestId = msg['request_id']
+            body = msg['body']
                     
-            # result = {
-            #     'request_id': requestId,
-            #     'msg': msg,
-            #     'status': 'completed'
-            # }
-            # print('debug: ', json.dumps(result))
-            # sendMessage(connectionId, result)
+            result = {
+                'request_id': requestId,
+                'msg': msg,
+                'status': 'completed'
+            }
+            print('received message: ', json.dumps(result))
+            sendMessage(connectionId, result)
     
 def initiate_redis():
     global redis_client
@@ -163,10 +166,10 @@ def initiate_redis():
     
 initiate_redis()
 
-def start_redis_pubsub(chatId):
+def start_redis_pubsub(connectionId, chatId):
     print('start subscribing redis.')
     channel = chatId 
-    subscribe_redis(redis_client, channel)
+    subscribe_redis(connectionId, redis_client, channel)
 
 # Secret
 secretsmanager = boto3.client('secretsmanager')
@@ -2512,7 +2515,7 @@ def lambda_handler(event, context):
                 if type == 'initiate':
                     chatId  = jsonBody['chat_id']
                     print('chatId: ', chatId)
-                    start_redis_pubsub(chatId)
+                    start_redis_pubsub(connectionId, chatId)
                 elif type == 'conversation':
                     chatId = jsonBody['chat_id']
                     # print('chatId: ', chatId)
@@ -2533,7 +2536,7 @@ def lambda_handler(event, context):
                         "request_time": requestTime,
                         "body": body
                     }
-                    print('msg: ', json.dumps(msg))
+                    # print('msg: ', json.dumps(msg))
                     
                     # publish to redis
                     channel = f"{chatId}"
