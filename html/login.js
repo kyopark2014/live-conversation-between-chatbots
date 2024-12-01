@@ -52,7 +52,6 @@ getProvisioningInfo(userId);
 function onSubmit(e) {
     e.preventDefault();
     console.log(userInput.value);
-    console.log(chatInput.value);
     console.log(receiverInput.value);
     console.log(convtypeInput.value);
     console.log(multiRegionInput.value);
