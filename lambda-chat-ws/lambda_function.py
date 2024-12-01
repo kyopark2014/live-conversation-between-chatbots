@@ -2496,8 +2496,12 @@ def lambda_handler(event, context):
     
     msg = ""
     if event['requestContext']: 
+        print('requestContext: ', event['requestContext'])
+        
         connectionId = event['requestContext']['connectionId']        
         routeKey = event['requestContext']['routeKey']
+        print('connectionId: ', connectionId)
+        print('routeKey: ', routeKey)
         
         if routeKey == '$connect':
             print('connected!')
