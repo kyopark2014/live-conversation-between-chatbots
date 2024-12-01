@@ -170,6 +170,9 @@ function connect(endpoint, type) {
                     feedback.style.display = 'none';          
                     console.log('received message: ', response.msg);                  
                     addReceivedMessage(response.request_id, response.msg);  
+
+                    // next message
+                    queryNextMessage(response.msg)
                 }                
                 else if(response.status == 'istyping') {
                     feedback.style.display = 'inline';
@@ -279,6 +282,30 @@ for (i=0;i<maxMsgItems;i++) {
     })(i);
 }
 
+function queryNextMessage(message) {
+    type = "text",
+    conv_type = conversationType,
+    rag_type = ''
+    
+    let current = new Date();
+    let datastr = getDate(current);
+    let timestr = getTime(current);
+    let requestTime = datastr+' '+timestr
+    let requestId = uuidv4();
+        
+    sendMessage({
+        "user_id": userId,
+        "request_id": requestId,
+        "request_time": requestTime,        
+        "type": type,
+        "body": message,
+        "conv_type": conv_type,
+        "rag_type": rag_type,
+        "multi_region": multi_mode,
+        "grade": grade_mode
+    })
+}
+
 calleeName.textContent = "Chatbot";  
 calleeId.textContent = "AWS";
 
@@ -341,23 +368,6 @@ function onSend(e) {
         let requestId = uuidv4();
         addSentMessage(requestId, timestr, message.value);
         
-        type = "text",
-        conv_type = conversationType,
-        rag_type = ''
-        function_type = ''
-        
-        // sendMessage({
-        //     "user_id": userId,
-        //     "request_id": requestId,
-        //     "request_time": requestTime,        
-        //     "type": type,
-        //     "body": message.value,
-        //     "conv_type": conv_type,
-        //     "rag_type": rag_type,
-        //     "multi_region": multi_mode,
-        //     "grade": grade_mode
-        // })
-
         type = "conversation"
         sendMessage({
             "type": type,
@@ -681,7 +691,6 @@ attachFile.addEventListener('click', function(){
                         if (xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status == 200 ) {
                             console.log(xmlHttp.responseText);
 
-                            function_type = 'upload'
                             if(conversationType=='qa-knowledge-base') {
                                 conv_type = 'qa-knowledge-base',
                                 rag_type = 'knowledge-base'
