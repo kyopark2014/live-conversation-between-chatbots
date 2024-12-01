@@ -180,7 +180,7 @@ function connect(endpoint, type) {
                         queryNextMessage(response.msg);
                     }   
                     else {
-                        print('message.value: ', message.value);
+                        console.log('message.value: ', message.value);
                         if(message.value == '') {    
                             console.log('auto generated message: ', response.msg);
                             sendConversationMessage(response.msg);
