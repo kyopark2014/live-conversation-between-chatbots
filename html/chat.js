@@ -232,6 +232,12 @@ if(chatId=="") {
 }
 console.log('chatId: ', chatId);
 
+let receiverId = localStorage.getItem('receiverId'); // set chatID if exists 
+if(receiverId=="") {
+    receiverId = uuidv4();
+}
+console.log('receiverId: ', receiverId);
+
 let conversationType = localStorage.getItem('conv_type'); // set conv_type if exists 
 if(conversationType=="") {
     conversationType = "normal";
