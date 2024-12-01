@@ -168,14 +168,23 @@ function connect(endpoint, type) {
 
                 if(response.status == 'completed') {          
                     feedback.style.display = 'none';          
-                    console.log('received message: ', response.msg);                  
-                    addReceivedMessage(response.request_id, response.msg);  
+                    console.log('received message: ', response.msg);
 
-                    // next message
                     if(response.type == 'conversation') {
-                        console.log('query next message: ', response.msg)
-                        queryNextMessage(response.msg)
-                    }                    
+                        addReceivedMessage(response.request_id, response.msg);
+                        console.log('query next message: ', response.msg);
+                        queryNextMessage(response.msg);
+                    }   
+                    else {
+                        print('message.value: ', message.value);
+                        if(message.value == '') {    
+                            console.log('auto generated message: ', response.msg);
+                            sendConversationMessage(response.msg);
+                        }
+                        else {
+                            console.log('stop auto generated message');
+                        }
+                    }
                 }                
                 else if(response.status == 'istyping') {
                     feedback.style.display = 'inline';
@@ -286,9 +295,9 @@ for (i=0;i<maxMsgItems;i++) {
 }
 
 function queryNextMessage(message) {
-    type = "text",
-    conv_type = conversationType,
-    rag_type = ''
+    type = "text";
+    conv_type = conversationType;
+    rag_type = '';
     
     let current = new Date();
     let datastr = getDate(current);
@@ -306,7 +315,25 @@ function queryNextMessage(message) {
         "rag_type": rag_type,
         "multi_region": multi_mode,
         "grade": grade_mode
-    })
+    });
+}
+
+function sendConversationMessage(message) {
+    type = "conversation";
+    
+    let current = new Date();
+    let datastr = getDate(current);
+    let timestr = getTime(current);
+    let requestTime = datastr+' '+timestr
+    let requestId = uuidv4();
+        
+    sendMessage({
+        "user_id": userId,
+        "request_id": requestId,
+        "request_time": requestTime,        
+        "type": type,
+        "body": message
+    });
 }
 
 calleeName.textContent = "Chatbot";  
@@ -678,7 +705,7 @@ attachFile.addEventListener('click', function(){
                     const body = JSON.parse(response.body);
                     console.log('body: ', body);
 
-                    const uploadURL = body.UploadURL;                    
+                    const uploadURL = body.UploadURL;
                     console.log("UploadURL: ", uploadURL);
 
                     var xmlHttp = new XMLHttpRequest();
@@ -694,14 +721,8 @@ attachFile.addEventListener('click', function(){
                         if (xmlHttp.readyState == XMLHttpRequest.DONE && xmlHttp.status == 200 ) {
                             console.log(xmlHttp.responseText);
 
-                            if(conversationType=='qa-knowledge-base') {
-                                conv_type = 'qa-knowledge-base',
-                                rag_type = 'knowledge-base'
-                            }
-                            else {
-                                conv_type = conversationType,
-                                rag_type = ''
-                            }
+                            conv_type = conversationType,
+                            rag_type = ''
 
                             // summary for the upload file                            
                             sendMessage({
