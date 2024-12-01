@@ -148,8 +148,7 @@ def subscribe_redis(connectionId, redis_client, channel):
                 'user_id': msg['user_id'],
                 'request_id': msg['request_id'],
                 'request_time': msg['request_time'],
-                'msg': msg['body'],
-                'status': 'completed'
+                'body': msg['body']
             }
             print('received message: ', json.dumps(result))
             sendMessage(connectionId, result)
