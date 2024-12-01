@@ -308,10 +308,10 @@ function queryNextMessage(message) {
     let requestId = uuidv4();
         
     sendMessage({
+        "type": type,
         "user_id": userId,
         "request_id": requestId,
         "request_time": requestTime,        
-        "type": type,
         "body": message,
         "conv_type": conv_type,
         "rag_type": rag_type,
@@ -330,10 +330,11 @@ function sendConversationMessage(message) {
     let requestId = uuidv4();
         
     sendMessage({
+        "type": type,
+        "receiver_id": receiverId,
         "user_id": userId,
         "request_id": requestId,
         "request_time": requestTime,        
-        "type": type,
         "body": message
     });
 
