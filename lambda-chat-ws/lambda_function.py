@@ -134,7 +134,7 @@ def subscribe_redis(connectionId, redis_client, channel):
     print('successfully subscribed for channel: ', channel)    
             
     for message in pubsub.listen():
-        print('message: ', message)
+        print('message: ', json.loads(message))
                 
         if message['data'] != 1:            
             received_data = message['data'].encode('utf-8').decode('unicode_escape')
@@ -2534,7 +2534,7 @@ def lambda_handler(event, context):
                     body = jsonBody['body']
                     # print('body: ', body)
                     
-                    msg = {
+                    data = {
                         "type": type,
                         "receiver_id": receiverId,
                         "user_id": userId,
@@ -2547,8 +2547,8 @@ def lambda_handler(event, context):
                     # publish to redis
                     channel = f"{receiverId}"
                     try: 
-                        redis_client.publish(channel=channel, message=json.dumps(msg))
-                        print('successfully published: ', json.dumps(msg))
+                        redis_client.publish(channel=channel, message=json.dumps(data))
+                        print('successfully published: ', json.dumps(data))
                     
                     except Exception:
                         err_msg = traceback.format_exc()
