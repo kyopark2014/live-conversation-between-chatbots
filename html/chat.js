@@ -121,7 +121,7 @@ function connect(endpoint, type) {
         let requestObj = {
             "user_id": userId,
             "type": "initiate"
-        }
+        };
         webSocket.send(JSON.stringify(requestObj));
 
         if(undelivered.size() && retry_count>0) {
@@ -131,17 +131,17 @@ function connect(endpoint, type) {
             console.log('retry_count: ', retry_count);
 
             for(i in keys) {
-                let message = undelivered.get(keys[i])
-                console.log('message', message)
+                let message = undelivered.get(keys[i]);
+                console.log('message', message);
                 if(!sendMessage(message)) break;
                 else {
-                    undelivered.remove(message.request_id)
+                    undelivered.remove(message.request_id);
                 }
             }
             retry_count--;
         }
         else {
-            retry_count = 3
+            retry_count = 3;
         }
 
         if(type == 'initial')
@@ -194,7 +194,8 @@ function connect(endpoint, type) {
                 else if(response.status == 'proceeding') {
                     if(response.type == 'conversation') {                    
                         feedback.style.display = 'none';
-                        addReceivedMessage(response.request_id, response.msg);                          
+                        addReceivedMessage(response.request_id, response.msg);  
+                    }
                 }                
                 else if(response.status == 'debug') {
                     feedback.style.display = 'none';
@@ -307,10 +308,10 @@ function queryNextMessage(message) {
     let requestId = uuidv4();
         
     sendMessage({
-        "type": type,
         "user_id": userId,
         "request_id": requestId,
         "request_time": requestTime,        
+        "type": type,
         "body": message,
         "conv_type": conv_type,
         "rag_type": rag_type,
@@ -329,14 +330,14 @@ function sendConversationMessage(message) {
     let requestId = uuidv4();
         
     sendMessage({
-        "type": type,
         "user_id": userId,
         "request_id": requestId,
         "request_time": requestTime,        
+        "type": type,
         "body": message
     });
 
-    addSentMessage(requestId, timestr, message)
+    addSentMessage(requestId, timestr, message);        
 }
 
 calleeName.textContent = "Chatbot";  
