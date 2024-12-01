@@ -128,7 +128,7 @@ print('redisAddress: ',redisAddress)
 redisPort = os.environ.get('redisPort')
 print('redisPort: ',redisPort)
 
-def subscribe_redis(connectionId, redis_client, channel, userId):    
+def subscribe_redis(connectionId, redis_client, channel):    
     pubsub = redis_client.pubsub()
     pubsub.subscribe(channel)
     print('successfully subscribed for channel: ', channel)    
@@ -142,17 +142,16 @@ def subscribe_redis(connectionId, redis_client, channel, userId):
             
             msg = json.loads(received_msg)
             
-            if userId != msg['user_id']:
-                requestId = msg['request_id']
-                body = msg['body']
+            requestId = msg['request_id']
+            body = msg['body']
                         
-                result = {
-                    'request_id': requestId,
-                    'msg': body,
-                    'status': 'completed'
-                }
-                print('received message: ', json.dumps(result))
-                sendMessage(connectionId, result)
+            result = {
+                'request_id': requestId,
+                'msg': body,
+                'status': 'completed'
+            }
+            print('received message: ', json.dumps(result))
+            sendMessage(connectionId, result)
     
 def initiate_redis():
     global redis_client
@@ -168,10 +167,10 @@ def initiate_redis():
     
 initiate_redis()
 
-def start_redis_pubsub(connectionId, chatId, userId):
+def start_redis_pubsub(connectionId, userId):
     print('start subscribing redis.')
-    channel = chatId 
-    subscribe_redis(connectionId, redis_client, channel, userId)
+    channel = userId 
+    subscribe_redis(connectionId, redis_client, channel)
 
 # Secret
 secretsmanager = boto3.client('secretsmanager')
@@ -2515,14 +2514,12 @@ def lambda_handler(event, context):
                 
                 type = jsonBody['type']
                 if type == 'initiate':
-                    chatId  = jsonBody['chat_id']
                     userId  = jsonBody['user_id']
-                    
-                    print('chatId: ', chatId)
-                    start_redis_pubsub(connectionId, chatId, userId)
-                elif type == 'conversation':
-                    chatId = jsonBody['chat_id']
-                    # print('chatId: ', chatId)
+                    print('userId: ', userId)                    
+                    start_redis_pubsub(connectionId, userId)
+                elif type == 'conversation':         
+                    receiverId  = jsonBody['receiver_id']
+                    print('receiverId: ', receiverId)                    
                     userId  = jsonBody['user_id']
                     # print('userId: ', userId)
                     requestId  = jsonBody['request_id']
@@ -2534,7 +2531,7 @@ def lambda_handler(event, context):
                     
                     msg = {
                         "type": type,
-                        "chat_id": chatId,
+                        "receiver_id": receiverId,
                         "user_id": userId,
                         "request_id": requestId,
                         "request_time": requestTime,
@@ -2543,7 +2540,7 @@ def lambda_handler(event, context):
                     # print('msg: ', json.dumps(msg))
                     
                     # publish to redis
-                    channel = f"{chatId}"
+                    channel = f"{receiverId}"
                     try: 
                         redis_client.publish(channel=channel, message=json.dumps(msg))
                         print('successfully published: ', json.dumps(msg))

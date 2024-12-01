@@ -1,6 +1,5 @@
 const myForm = document.querySelector('#my-form');
 const userInput = document.querySelector('#userId');
-const chatInput = document.querySelector('#chatId');
 const receiverInput = document.querySelector('#receiverId');
 const convtypeInput = document.querySelector('#convtype');
 
@@ -11,12 +10,6 @@ if(userId != '') {
     userInput.value = userId;
 }
 console.log(userInput.value);
-
-let chatId = localStorage.getItem('chatId'); // set chatId if exists 
-if(chatId != '') {
-    chatInput.value = chatId;
-}
-console.log(receiverInput.value);
 
 let receiverId = localStorage.getItem('receiverId'); // set receiverId if exists 
 if(receiverId != '') {
@@ -67,9 +60,6 @@ function onSubmit(e) {
 
     localStorage.setItem('userId',userInput.value);
     console.log('Save Profile> userId:', userInput.value)    
-
-    localStorage.setItem('chatId',chatInput.value);
-    console.log('Save Profile> chatId:', chatInput.value)    
 
     localStorage.setItem('receiverId',receiverInput.value);
     console.log('Save Profile> receiverId:', receiverInput.value)    

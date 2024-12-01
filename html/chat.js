@@ -119,7 +119,7 @@ function connect(endpoint, type) {
 
         // request initiation of redis
         let requestObj = {
-            "chat_id": chatId,
+            "receiver_id": receiverId,
             "type": "initiate"
         }
         webSocket.send(JSON.stringify(requestObj));
@@ -233,13 +233,7 @@ if(userId=="") {
 }
 console.log('userId: ', userId);
 
-let chatId = localStorage.getItem('chatId'); // set chatID if exists 
-if(chatId=="") {
-    chatId = uuidv4();
-}
-console.log('chatId: ', chatId);
-
-let receiverId = localStorage.getItem('receiverId'); // set chatID if exists 
+let receiverId = localStorage.getItem('receiverId'); // set receiverId if exists 
 if(receiverId=="") {
     receiverId = uuidv4();
 }
@@ -367,7 +361,7 @@ function onSend(e) {
         type = "conversation"
         sendMessage({
             "type": type,
-            "chat_id": chatId,
+            "receiver_id": receiverId,
             "user_id": userId,
             "request_id": requestId,
             "request_time": requestTime,
