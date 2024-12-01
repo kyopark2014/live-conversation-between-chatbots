@@ -451,6 +451,31 @@ export class CdkLiveConversationStack extends cdk.Stack {
         statements: [apiInvokePolicy],
       }),
     );    
+    roleLambdaWebsocket.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName("AmazonElastiCacheFullAccess")
+    );
+    roleLambdaWebsocket.addManagedPolicy(
+      ManagedPolicy.fromAwsManagedPolicyName(
+        "service-role/AWSLambdaENIManagementAccess"
+      )
+    );
+
+    const lambdaSG = new ec2.SecurityGroup(this, `lambda-sg-for-${projectName}`, {
+      description: `security group of lambda for ${projectName}`,      
+      vpc: vpc,
+      allowAllOutbound: true,
+      securityGroupName: `lambda-sg-for-${projectName}`,
+    });
+
+    lambdaSG.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTcp(), 'allow all access from the world');
+    // Peer.anyIpv4(), Peer.anyIpv6(), Peer.ipv4(), Peer.ipv6(), Peer.prefixList(), Peer.securityGroupId(), EndpointGroup.connectionsPeer(), ipv4('10.200.0.0/24')
+    // ec2.Port.tcp(80) allTcp(), allTraffic(), tcp(port), ec2.Port.tcp(5439)
+
+    lambdaSG.connections.allowTo(
+      redisSecurityGroup,
+      ec2.Port.tcp(6379),
+      "Allow this lambda function connect to the redis cache"
+    );
 
     // pass role
     const passRoleResourceArn = knowledge_base_role.roleArn;
@@ -759,6 +784,8 @@ export class CdkLiveConversationStack extends cdk.Stack {
       functionName: `lambda-chat-ws-for-${projectName}`,
       code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-chat-ws')),
       timeout: cdk.Duration.seconds(300),
+      vpc: vpc,  // for Redis
+      securityGroups: [lambdaSG],
       memorySize: 2048,
       role: roleLambdaWebsocket,
       environment: {
@@ -785,7 +812,9 @@ export class CdkLiveConversationStack extends cdk.Stack {
         embeddingModelArn: embeddingModelArn,
         collectionName: collectionName,
         collectionArn: collectionArn,
-        vectorIndexName: vectorIndexName
+        vectorIndexName: vectorIndexName,
+        redisAddress: redisCache.attrRedisEndpointAddress,
+        redisPort: redisCache.attrRedisEndpointPort
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
@@ -882,259 +911,7 @@ export class CdkLiveConversationStack extends cdk.Stack {
     });
     
     // deploy components
-    new componentDeployment(scope, `component-deployment-of-${projectName}`, websocketapi.attrApiId)     
-
-    ///////////////////////////////////////////
-    // Conversation Stream
-    ///////////////////////////////////////////
-    // Lambda - redis
-    const roleLambdaRedis = new iam.Role(this, `role-lambda-redis-for-${projectName}`, {
-      roleName: `role-lambda-redis-for-${projectName}-${region}`,
-      assumedBy: new iam.CompositePrincipal(
-        new iam.ServicePrincipal("lambda.amazonaws.com"),
-      )
-    });
-    roleLambdaRedis.addManagedPolicy({
-      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
-    });
-    roleLambdaRedis.attachInlinePolicy( 
-      new iam.Policy(this, `api-invoke-policy-of-redis-for-${projectName}`, {
-        statements: [apiInvokePolicy],
-      }),
-    );  
-
-    // For Redis
-    roleLambdaRedis.addManagedPolicy(
-      ManagedPolicy.fromAwsManagedPolicyName("AmazonElastiCacheFullAccess")
-    );
-    roleLambdaRedis.addManagedPolicy(
-      ManagedPolicy.fromAwsManagedPolicyName(
-        "service-role/AWSLambdaENIManagementAccess"
-      )
-    );
-
-    const lambdaSG = new ec2.SecurityGroup(this, `lambda-sg-for-${projectName}`, {
-      description: `security group of lambda for ${projectName}`,      
-      vpc: vpc,
-      allowAllOutbound: true,
-      securityGroupName: `lambda-sg-for-${projectName}`,
-    });
-
-    lambdaSG.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTcp(), 'allow all access from the world');
-    // Peer.anyIpv4(), Peer.anyIpv6(), Peer.ipv4(), Peer.ipv6(), Peer.prefixList(), Peer.securityGroupId(), EndpointGroup.connectionsPeer(), ipv4('10.200.0.0/24')
-    // ec2.Port.tcp(80) allTcp(), allTraffic(), tcp(port), ec2.Port.tcp(5439)
-
-    lambdaSG.connections.allowTo(
-      redisSecurityGroup,
-      ec2.Port.tcp(6379),
-      "Allow this lambda function connect to the redis cache"
-    );
-    
-    // lambda - redis for conversation  
-    const lambdaRedis = new lambda.DockerImageFunction(this, `lambda-redis-for-${projectName}`, {
-      description: 'lambda for redis',
-      functionName: `lambda-redis-for-${projectName}`,
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-redis')),
-      timeout: cdk.Duration.seconds(300),
-      role: roleLambdaRedis,
-      vpc: vpc,  // for Redis
-      securityGroups: [lambdaSG],
-      environment: {
-        redisAddress: redisCache.attrRedisEndpointAddress,
-        redisPort: redisCache.attrRedisEndpointPort
-      }
-    });
-    
-    // POST method - redis
-    const redis_info = api.root.addResource("redis");
-    redis_info.addMethod('POST', new apiGateway.LambdaIntegration(lambdaRedis, {
-      passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_TEMPLATES,
-      credentialsRole: role,
-      integrationResponses: [{
-        statusCode: '200',
-      }], 
-      proxy:false, 
-    }), {
-      methodResponses: [  
-        {
-          statusCode: '200',
-          responseModels: {
-            'application/json': apiGateway.Model.EMPTY_MODEL,
-          }, 
-        }
-      ]
-    }); 
-
-    // cloudfront setting for redis api
-    distribution.addBehavior("/redis", new origins.RestApiOrigin(api), {
-      cachePolicy: cloudFront.CachePolicy.CACHING_DISABLED,
-      allowedMethods: cloudFront.AllowedMethods.ALLOW_ALL,  
-      viewerProtocolPolicy: cloudFront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    }); 
-
-    // conversation stream api gateway
-    // API Gateway
-    const conversationWebsocketapi = new apigatewayv2.CfnApi(this, `conversation-ws-api-for-${projectName}`, {
-      description: 'API Gateway for conversation using websocket',
-      apiKeySelectionExpression: "$request.header.x-api-key",
-      name: 'conversation-ws-api-for-'+projectName,
-      protocolType: "WEBSOCKET", // WEBSOCKET or HTTP
-      routeSelectionExpression: "$request.body.action",     
-    });  
-    conversationWebsocketapi.applyRemovalPolicy(cdk.RemovalPolicy.DESTROY); // DESTROY, RETAIN
-
-    new cdk.CfnOutput(this, 'conversation-api-identifier', {
-      value: conversationWebsocketapi.attrApiId,
-      description: 'The Conversation API identifier.',
-    });
-
-    const conversation_wss_url = `wss://${conversationWebsocketapi.attrApiId}.execute-api.${region}.amazonaws.com/${stage}`;
-    new cdk.CfnOutput(this, 'conversation-web-socket-url', {
-      value: conversation_wss_url,
-      
-      description: 'The URL of Conversation Web Socket',
-    });
-
-    const conversation_connection_url = `https://${conversationWebsocketapi.attrApiId}.execute-api.${region}.amazonaws.com/${stage}`;
-    new cdk.CfnOutput(this, 'conversation-connection-url', {
-      value: conversation_connection_url,
-      
-      description: 'The URL of conversation connection',
-    });
-
-    // Lambda - conversation (websocket)
-    const roleLambdaConversationWebsocket = new iam.Role(this, `role-lambda-conversation-ws-for-${projectName}`, {
-      roleName: `role-lambda-conversation-ws-for-${projectName}-${region}`,
-      assumedBy: new iam.CompositePrincipal(
-        new iam.ServicePrincipal("lambda.amazonaws.com"),
-      )
-    });
-    roleLambdaConversationWebsocket.addManagedPolicy({
-      managedPolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
-    });
-    roleLambdaConversationWebsocket.attachInlinePolicy( 
-      new iam.Policy(this, `conversation-api-invoke-policy-for-${projectName}`, {
-        statements: [apiInvokePolicy],
-      }),
-    );  
-
-    // For Redis
-    roleLambdaConversationWebsocket.addManagedPolicy(
-      ManagedPolicy.fromAwsManagedPolicyName("AmazonElastiCacheFullAccess")
-    );
-
-    roleLambdaConversationWebsocket.addManagedPolicy(
-      ManagedPolicy.fromAwsManagedPolicyName(
-        "service-role/AWSLambdaENIManagementAccess"
-      )
-    );
-        
-    const lambdaConversationWebsocket = new lambda.DockerImageFunction(this, `lambda-conversation-ws-for-${projectName}`, {
-      description: 'lambda for conversation using websocket',
-      functionName: `lambda-conversation-ws-for-${projectName}`,
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-conversation-ws')),
-      timeout: cdk.Duration.seconds(300),
-      role: roleLambdaConversationWebsocket,  
-      vpc: vpc,  // for Redis
-      securityGroups: [lambdaSG],
-      // allowPublicSubnet: true,
-      environment: {
-        conversation_connection_url: conversation_connection_url, 
-        redisAddress: redisCache.attrRedisEndpointAddress,
-        redisPort: redisCache.attrRedisEndpointPort
-      }
-    });     
-    lambdaConversationWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
-    
-    new cdk.CfnOutput(this, 'function-conversation-ws-arn', {
-      value: lambdaConversationWebsocket.functionArn,
-      description: 'The arn of lambda conversation webchat.',
-    }); 
-
-    const conversationIntegrationUri = `arn:aws:apigateway:${region}:lambda:path/2015-03-31/functions/${lambdaConversationWebsocket.functionArn}/invocations`;    
-    const cfnConversationIntegration = new apigatewayv2.CfnIntegration(this, `conversation-api-integration-for-${projectName}`, {
-      apiId: conversationWebsocketapi.attrApiId,
-      integrationType: 'AWS_PROXY',
-      credentialsArn: role.roleArn,
-      connectionType: 'INTERNET',
-      description: 'Integration for connect',
-      integrationUri: conversationIntegrationUri,
-    });  
-
-    new apigatewayv2.CfnRoute(this, `conversation-api-route-for-${projectName}-connect`, {
-      apiId: conversationWebsocketapi.attrApiId,
-      routeKey: "$connect", 
-      apiKeyRequired: false,
-      authorizationType: "NONE",
-      operationName: 'connect',
-      target: `integrations/${cfnConversationIntegration.ref}`,      
-    }); 
-
-    new apigatewayv2.CfnRoute(this, `conversation-api-route-for-${projectName}-disconnect`, {
-      apiId: conversationWebsocketapi.attrApiId,
-      routeKey: "$disconnect", 
-      apiKeyRequired: false,
-      authorizationType: "NONE",
-      operationName: 'disconnect',
-      target: `integrations/${cfnConversationIntegration.ref}`,      
-    }); 
-
-    new apigatewayv2.CfnRoute(this, `conversation-api-route-for-${projectName}-default`, {
-      apiId: conversationWebsocketapi.attrApiId,
-      routeKey: "$default", 
-      apiKeyRequired: false,
-      authorizationType: "NONE",
-      operationName: 'default',
-      target: `integrations/${cfnConversationIntegration.ref}`,      
-    }); 
-
-    new apigatewayv2.CfnStage(this, `conversation-api-stage-for-${projectName}`, {
-      apiId: conversationWebsocketapi.attrApiId,
-      stageName: stage
-    }); 
-
-    // lambda - conversation provisioning 
-    const lambdaConversationProvisioning = new lambda.Function(this, `lambda-conversation-provisioning-for-${projectName}`, {
-      description: 'lambda to earn conversation provisioning info',
-      functionName: `lambda-conversation-provisioning-api-${projectName}`,
-      handler: 'lambda_function.lambda_handler',
-      runtime: lambda.Runtime.PYTHON_3_11,
-      code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-conversation-provisioning')),
-      timeout: cdk.Duration.seconds(30),
-      environment: {
-        conversation_wss_url: conversation_wss_url,
-      }
-    });
-
-    // POST method - provisioning
-    const conversation_provisioning_info = api.root.addResource("conversation_provisioning");
-    conversation_provisioning_info.addMethod('POST', new apiGateway.LambdaIntegration(lambdaConversationProvisioning, {
-      passthroughBehavior: apiGateway.PassthroughBehavior.WHEN_NO_TEMPLATES,
-      credentialsRole: role,
-      integrationResponses: [{
-        statusCode: '200',
-      }], 
-      proxy:false, 
-    }), {
-      methodResponses: [  
-        {
-          statusCode: '200',
-          responseModels: {
-            'application/json': apiGateway.Model.EMPTY_MODEL,
-          }, 
-        }
-      ]
-    }); 
-
-    // cloudfront setting for provisioning api
-    distribution.addBehavior("/conversation_provisioning", new origins.RestApiOrigin(api), {
-      cachePolicy: cloudFront.CachePolicy.CACHING_DISABLED,
-      allowedMethods: cloudFront.AllowedMethods.ALLOW_ALL,  
-      viewerProtocolPolicy: cloudFront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    });
-
-    // deploy components
-    new conversationComponentDeployment(scope, `conversation-deployment-for-${projectName}`, conversationWebsocketapi.attrApiId)   
+    new componentDeployment(scope, `component-deployment-of-${projectName}`, websocketapi.attrApiId)         
   }
 }
 
@@ -1149,15 +926,3 @@ export class componentDeployment extends cdk.Stack {
     });   
   }
 }
-
-export class conversationComponentDeployment extends cdk.Stack {
-  constructor(scope: Construct, id: string, appId: string, props?: cdk.StackProps) {    
-    super(scope, id, props);
-
-    new apigatewayv2.CfnDeployment(this, `conversation-api-deployment-for-${projectName}`, {
-      apiId: appId,
-      description: "deploy conversation api gateway using websocker",  // $default
-      stageName: stage
-    });   
-  }
-} 
