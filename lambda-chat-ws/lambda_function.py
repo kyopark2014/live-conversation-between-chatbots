@@ -2492,7 +2492,7 @@ def getResponse(connectionId, jsonBody):
     return msg, reference
 
 def lambda_handler(event, context):
-    # print('event: ', event)
+    print('event: ', event)
     
     msg = ""
     if event['requestContext']: 
