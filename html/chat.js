@@ -168,8 +168,12 @@ function connect(endpoint, type) {
 
                 if(response.status == 'completed') {          
                     feedback.style.display = 'none';          
-                    console.log('received message: ', response);
-
+                    
+                    console.log('response.type: ', response.type);
+                    console.log('response: ', response);
+                    console.log('request_id: ', response.request_id);
+                    console.log('received msg: ', response.msg);
+                    
                     if(response.type == 'conversation') {
                         addReceivedMessage(response.request_id, response.msg);
                         console.log('query next message: ', response.msg);
