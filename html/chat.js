@@ -226,6 +226,12 @@ if(userId=="") {
 }
 console.log('userId: ', userId);
 
+let chatId = localStorage.getItem('chatId'); // set chatID if exists 
+if(chatId=="") {
+    chatId = uuidv4();
+}
+console.log('chatId: ', chatId);
+
 let conversationType = localStorage.getItem('conv_type'); // set conv_type if exists 
 if(conversationType=="") {
     conversationType = "normal";
@@ -233,7 +239,7 @@ if(conversationType=="") {
 console.log('conversationType: ', conversationType);
 
 // multi region
-let multi_region = localStorage.getItem('multiRegion'); // set userID if exists 
+let multi_region = localStorage.getItem('multiRegion'); // set multi_region if exists 
 if(multi_region=="" || multi_region==null) {
     multi_mode = 'disable';    
 }
@@ -243,7 +249,7 @@ else {
 console.log('multi_region: ', multi_region);
 
 // grade
-let gradeMode = localStorage.getItem('gradeMode'); // set userID if exists 
+let gradeMode = localStorage.getItem('gradeMode'); // set gradeMode if exists 
 if(gradeMode=="" || gradeMode==null) {
     grade_mode = 'LLM';    
 }

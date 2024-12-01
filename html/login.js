@@ -1,13 +1,17 @@
 const myForm = document.querySelector('#my-form');
 const userInput = document.querySelector('#userId');
+const chatInput = document.querySelector('#chatId');
 const convtypeInput = document.querySelector('#convtype');
 
 myForm.addEventListener('submit', onSubmit);
 
-// load userId 
 let userId = localStorage.getItem('userId'); // set userID if exists 
 if(userId != '') {
     userInput.value = userId;
+}
+let chatId = localStorage.getItem('chatId'); // set chatID if exists 
+if(chatId != '') {
+    chatInput.value = chatId;
 }
 
 let conversationType = localStorage.getItem('conv_type'); // set conversationType if exists 
@@ -47,12 +51,16 @@ getProvisioningInfo(userId);
 function onSubmit(e) {
     e.preventDefault();
     console.log(userInput.value);
+    console.log(chatInput.value);
     console.log(convtypeInput.value);
     console.log(multiRegionInput.value);
     console.log(gradeInput.value);
 
     localStorage.setItem('userId',userInput.value);
     console.log('Save Profile> userId:', userInput.value)    
+
+    localStorage.setItem('chatId',chatInput.value);
+    console.log('Save Profile> chatId:', chatInput.value)    
 
     localStorage.setItem('conv_type',convtypeInput.value);
     console.log('Save Profile> conv_type:', convtypeInput.value)

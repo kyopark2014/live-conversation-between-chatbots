@@ -9,6 +9,7 @@ import traceback
 import re
 import base64
 import requests
+import redis
 
 from io import BytesIO
 from urllib import parse
@@ -120,6 +121,54 @@ multi_region = 'disable'
 
 reference_docs = []
 
+# Redis
+# for Redis
+redisAddress = os.environ.get('redisAddress')
+print('redisAddress: ',redisAddress)
+redisPort = os.environ.get('redisPort')
+print('redisPort: ',redisPort)
+
+def subscribe_redis(redis_client, channel):    
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe(channel)
+    print('successfully subscribed for channel: ', channel)    
+            
+    for message in pubsub.listen():
+        print('message: ', message)
+                
+        if message['data'] != 1:            
+            msg = message['data'].encode('utf-8').decode('unicode_escape')
+            # msg = msg[1:len(msg)-1]
+            print('received msg: ', msg)    
+                    
+            # result = {
+            #     'request_id': requestId,
+            #     'msg': msg,
+            #     'status': 'completed'
+            # }
+            # print('debug: ', json.dumps(result))
+            # sendMessage(connectionId, result)
+
+def start_redis_pubsub(userId):
+    print('start subscribing redis.')
+    channel = userId 
+    subscribe_redis(redis_client, channel)
+    
+def initiate_redis():
+    global redis_client
+    
+    try: 
+        redis_client = redis.Redis(host=redisAddress, port=redisPort, db=0, charset="utf-8", decode_responses=True)    
+        print('Redis was connected')
+        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        raise Exception ("Not able to request to redis")        
+    
+initiate_redis()
+
+# Secret
 secretsmanager = boto3.client('secretsmanager')
 
 tavily_api_key = ""
@@ -2520,6 +2569,9 @@ def lambda_handler(event, context):
         
                 jsonBody = json.loads(body)
                 print('request body: ', json.dumps(jsonBody))
+                
+                # if type == 'initiate':
+                #     start_redis_pubsub(userId)
 
                 requestId  = jsonBody['request_id']
                 try:
