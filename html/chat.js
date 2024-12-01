@@ -164,16 +164,12 @@ function connect(endpoint, type) {
                     let elapsed = (current - sentTime.get(response.request_id))/1000;
                     // console.log('elapsed time: ', elapsed);
                 }
-                console.log('received response: ', response);
+                // console.log('received response: ', response);
 
-                if(response.status == 'completed') {          
-                    feedback.style.display = 'none';          
+                if(response.status == 'completed') {
+                    feedback.style.display = 'none';
                     
-                    console.log('response.type: ', response.type);
-                    console.log('response: ', response);
-                    console.log('request_id: ', response.request_id);
-                    console.log('received msg: ', response.msg);
-                    
+                    console.log('response: ', response);                    
                     if(response.type == 'conversation') {
                         addReceivedMessage(response.request_id, response.msg);
                         console.log('query next message: ', response.msg);
@@ -196,8 +192,9 @@ function connect(endpoint, type) {
                     feedback.innerHTML = '<i>'+response.msg+'</i>'; 
                 }
                 else if(response.status == 'proceeding') {
-                    feedback.style.display = 'none';
-                    addReceivedMessage(response.request_id, response.msg);  
+                    if(response.type == 'conversation') {                    
+                        feedback.style.display = 'none';
+                        addReceivedMessage(response.request_id, response.msg);                          
                 }                
                 else if(response.status == 'debug') {
                     feedback.style.display = 'none';
@@ -310,10 +307,10 @@ function queryNextMessage(message) {
     let requestId = uuidv4();
         
     sendMessage({
+        "type": type,
         "user_id": userId,
         "request_id": requestId,
         "request_time": requestTime,        
-        "type": type,
         "body": message,
         "conv_type": conv_type,
         "rag_type": rag_type,
@@ -332,12 +329,14 @@ function sendConversationMessage(message) {
     let requestId = uuidv4();
         
     sendMessage({
+        "type": type,
         "user_id": userId,
         "request_id": requestId,
         "request_time": requestTime,        
-        "type": type,
         "body": message
     });
+
+    addSentMessage(requestId, timestr, message)
 }
 
 calleeName.textContent = "Chatbot";  
