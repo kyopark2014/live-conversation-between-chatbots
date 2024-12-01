@@ -9,10 +9,13 @@ let userId = localStorage.getItem('userId'); // set userID if exists
 if(userId != '') {
     userInput.value = userId;
 }
+console.log(userInput.value);
+
 let chatId = localStorage.getItem('chatId'); // set chatID if exists 
 if(chatId != '') {
     chatInput.value = chatId;
 }
+console.log(chatInput.value);
 
 let conversationType = localStorage.getItem('conv_type'); // set conversationType if exists 
 if(conversationType != '') {
@@ -21,8 +24,6 @@ if(conversationType != '') {
 else {
     convtypeInput.value = "normal"  // general conversation
 }
-
-console.log(userInput.value);
 console.log(convtypeInput.value);
 
 const multiRegionInput = document.querySelector('#multiRegion');
