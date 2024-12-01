@@ -2510,7 +2510,7 @@ def lambda_handler(event, context):
                 
                 type = jsonBody['type']
                 if type == 'initiate':
-                    chatId  = jsonBody['chatId']
+                    chatId  = jsonBody['chat_id']
                     print('chatId: ', chatId)
                     start_redis_pubsub(chatId)
                 elif type == 'conversation':
