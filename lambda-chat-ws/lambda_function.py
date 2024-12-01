@@ -128,7 +128,7 @@ print('redisAddress: ',redisAddress)
 redisPort = os.environ.get('redisPort')
 print('redisPort: ',redisPort)
 
-def subscribe_redis(connectionId, redis_client, channel):    
+def subscribe_redis(connectionId, redis_client, channel, userId):    
     pubsub = redis_client.pubsub()
     pubsub.subscribe(channel)
     print('successfully subscribed for channel: ', channel)    
@@ -142,16 +142,17 @@ def subscribe_redis(connectionId, redis_client, channel):
             
             msg = json.loads(received_msg)
             
-            requestId = msg['request_id']
-            body = msg['body']
-                    
-            result = {
-                'request_id': requestId,
-                'msg': body,
-                'status': 'completed'
-            }
-            print('received message: ', json.dumps(result))
-            sendMessage(connectionId, result)
+            if userId != msg['user_id']:
+                requestId = msg['request_id']
+                body = msg['body']
+                        
+                result = {
+                    'request_id': requestId,
+                    'msg': body,
+                    'status': 'completed'
+                }
+                print('received message: ', json.dumps(result))
+                sendMessage(connectionId, result)
     
 def initiate_redis():
     global redis_client
@@ -167,10 +168,10 @@ def initiate_redis():
     
 initiate_redis()
 
-def start_redis_pubsub(connectionId, chatId):
+def start_redis_pubsub(connectionId, chatId, userId):
     print('start subscribing redis.')
     channel = chatId 
-    subscribe_redis(connectionId, redis_client, channel)
+    subscribe_redis(connectionId, redis_client, channel, userId)
 
 # Secret
 secretsmanager = boto3.client('secretsmanager')
@@ -2515,8 +2516,10 @@ def lambda_handler(event, context):
                 type = jsonBody['type']
                 if type == 'initiate':
                     chatId  = jsonBody['chat_id']
+                    userId  = jsonBody['user_id']
+                    
                     print('chatId: ', chatId)
-                    start_redis_pubsub(connectionId, chatId)
+                    start_redis_pubsub(connectionId, chatId, userId)
                 elif type == 'conversation':
                     chatId = jsonBody['chat_id']
                     # print('chatId: ', chatId)
