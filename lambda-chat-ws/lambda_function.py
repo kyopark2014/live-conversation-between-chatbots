@@ -2492,16 +2492,14 @@ def getResponse(connectionId, jsonBody):
     return msg, reference
 
 def lambda_handler(event, context):
-    print('event: ', event)
+    #print('event: ', event)
     
     msg = ""
     if event['requestContext']: 
-        print('requestContext: ', event['requestContext'])
+        #print('requestContext: ', event['requestContext'])
         
         connectionId = event['requestContext']['connectionId']        
         routeKey = event['requestContext']['routeKey']
-        print('connectionId: ', connectionId)
-        print('routeKey: ', routeKey)
         
         if routeKey == '$connect':
             print('connected!')
@@ -2511,15 +2509,15 @@ def lambda_handler(event, context):
             body = event.get("body", "")
             #print("data[0:8]: ", body[0:8])
             if body[0:8] == "__ping__":
-                # print("keep alive!")                
+                print('body: ', body)
                 sendMessage(connectionId, "__pong__")
             else:
                 print('connectionId: ', connectionId)
                 print('routeKey: ', routeKey)
         
                 jsonBody = json.loads(body)
-                # print('request body: ', json.dumps(jsonBody))
-                # print('type: ', jsonBody['type'])
+                print('request body: ', json.dumps(jsonBody))
+                print('type: ', jsonBody['type'])
                 
                 type = jsonBody['type']
                 if type == 'initiate':
