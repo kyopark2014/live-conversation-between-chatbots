@@ -137,18 +137,18 @@ def subscribe_redis(connectionId, redis_client, channel):
         print('message: ', message)
                 
         if message['data'] != 1:            
-            received_msg = message['data'].encode('utf-8').decode('unicode_escape')
-            print('received_msg: ', received_msg)    
+            received_data = message['data'].encode('utf-8').decode('unicode_escape')
+            # print('received_data: ', received_data)    
 
-            msg = json.loads(received_msg)
+            data = json.loads(received_data)
 
             result = {
                 'type': 'conversation',
-                'receiver_id': msg['receiver_id'],
-                'user_id': msg['user_id'],
-                'request_id': msg['request_id'],
-                'request_time': msg['request_time'],
-                'body': msg['body'],
+                'receiver_id': data['receiver_id'],
+                'user_id': data['user_id'],
+                'request_id': data['request_id'],
+                'request_time': data['request_time'],
+                'body': data['body'],
                 'status': 'completed'
             }
             print('message to client: ', json.dumps(result))
@@ -558,7 +558,7 @@ def sendResultMessage(connectionId, requestId, msg):
     result = {
         'type': 'chat',
         'request_id': requestId,
-        'msg': msg,
+        'body': msg,
         'status': 'completed'
     }
     #print('debug: ', json.dumps(debugMsg))
@@ -568,7 +568,7 @@ def sendDebugMessage(connectionId, requestId, msg):
     debugMsg = {
         'type': 'chat',
         'request_id': requestId,
-        'msg': msg,
+        'body': msg,
         'status': 'debug'
     }
     #print('debug: ', json.dumps(debugMsg))
@@ -578,7 +578,7 @@ def sendErrorMessage(connectionId, requestId, msg):
     errorMsg = {
         'type': 'chat',
         'request_id': requestId,
-        'msg': msg,
+        'body': msg,
         'status': 'error'
     }
     print('error: ', json.dumps(errorMsg))
@@ -1096,7 +1096,7 @@ def isTyping(connectionId, requestId, msg):
     msg_proceeding = {
         'type': 'chat',
         'request_id': requestId,
-        'msg': msg,
+        'body': msg,
         'status': 'istyping'
     }
     #print('result: ', json.dumps(result))
@@ -1111,7 +1111,7 @@ def readStreamMsg(connectionId, requestId, stream):
 
             result = {
                 'request_id': requestId,
-                'msg': msg,
+                'body': msg,
                 'status': 'proceeding'
             }
             #print('result: ', json.dumps(result))
@@ -2514,8 +2514,8 @@ def lambda_handler(event, context):
                 print('routeKey: ', routeKey)
         
                 jsonBody = json.loads(body)
-                print('request body: ', json.dumps(jsonBody))
-                print('type: ', jsonBody['type'])
+                # print('request body: ', json.dumps(jsonBody))
+                # print('type: ', jsonBody['type'])
                 
                 type = jsonBody['type']
                 if type == 'initiate':

@@ -171,15 +171,15 @@ function connect(endpoint, type) {
                     
                     console.log('response: ', response);                    
                     if(response.type == 'conversation') {
-                        addReceivedMessage(response.request_id, response.msg);
-                        console.log('query next message: ', response.msg);
-                        queryNextMessage(response.msg);
+                        addReceivedMessage(response.request_id, response.body);
+                        console.log('query next message: ', response.body);
+                        queryNextMessage(response.body);
                     }   
                     else {
                         console.log('message.value: ', message.value);
                         if(message.value == '') {    
-                            console.log('auto generated message: ', response.msg);
-                            sendConversationMessage(response.msg);
+                            console.log('auto generated message: ', response.body);
+                            sendConversationMessage(response.body);
                         }
                         else {
                             console.log('stop auto generated message');
@@ -188,24 +188,24 @@ function connect(endpoint, type) {
                 }                
                 else if(response.status == 'istyping') {
                     feedback.style.display = 'inline';
-                    console.log('received message: ', response.msg);
-                    feedback.innerHTML = '<i>'+response.msg+'</i>'; 
+                    console.log('received message: ', response.body);
+                    feedback.innerHTML = '<i>'+response.body+'</i>'; 
                 }
                 else if(response.status == 'proceeding') {
                     if(response.type == 'conversation') {                    
                         feedback.style.display = 'none';
-                        addReceivedMessage(response.request_id, response.msg);  
+                        addReceivedMessage(response.request_id, response.body);  
                     }
                 }                
                 else if(response.status == 'debug') {
                     feedback.style.display = 'none';
-                    console.log('debug: ', response.msg);
+                    console.log('debug: ', response.body);
                     // addNotifyMessage(response.msg);
-                    addReceivedMessage(response.request_id, response.msg);  
+                    addReceivedMessage(response.request_id, response.body);  
                 }          
                 else if(response.status == 'error') {
                     feedback.style.display = 'none';
-                    console.log('error: ', response.msg);
+                    console.log('error: ', response.body);
 
                     if(response.msg.indexOf('throttlingException') || response.msg.indexOf('Too many requests') || response.msg.indexOf('too many requests')) {
                         addNotifyMessage('허용된 요청수를 초과하였습니다. 추후 다시 재도시도 해주세요.');  
