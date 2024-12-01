@@ -119,7 +119,7 @@ function connect(endpoint, type) {
 
         // request initiation of redis
         let requestObj = {
-            "receiver_id": receiverId,
+            "user_id": userId,
             "type": "initiate"
         }
         webSocket.send(JSON.stringify(requestObj));
