@@ -146,6 +146,7 @@ def subscribe_redis(connectionId, redis_client, channel):
             body = msg['body']
                         
             result = {
+                'type': 'conversation',
                 'request_id': requestId,
                 'msg': body,
                 'status': 'completed'
@@ -555,6 +556,7 @@ def sendMessage(id, body):
 
 def sendResultMessage(connectionId, requestId, msg):    
     result = {
+        'type': 'chat',
         'request_id': requestId,
         'msg': msg,
         'status': 'completed'
@@ -564,6 +566,7 @@ def sendResultMessage(connectionId, requestId, msg):
 
 def sendDebugMessage(connectionId, requestId, msg):
     debugMsg = {
+        'type': 'chat',
         'request_id': requestId,
         'msg': msg,
         'status': 'debug'
@@ -573,6 +576,7 @@ def sendDebugMessage(connectionId, requestId, msg):
 
 def sendErrorMessage(connectionId, requestId, msg):
     errorMsg = {
+        'type': 'chat',
         'request_id': requestId,
         'msg': msg,
         'status': 'error'
@@ -1090,6 +1094,7 @@ def isTyping(connectionId, requestId, msg):
     if not msg:
         msg = "typing a message..."
     msg_proceeding = {
+        'type': 'chat',
         'request_id': requestId,
         'msg': msg,
         'status': 'istyping'

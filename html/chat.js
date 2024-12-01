@@ -172,8 +172,10 @@ function connect(endpoint, type) {
                     addReceivedMessage(response.request_id, response.msg);  
 
                     // next message
-                    console.log('query next message: ', response.msg)
-                    queryNextMessage(response.msg)
+                    if(response.type == 'conversation') {
+                        console.log('query next message: ', response.msg)
+                        queryNextMessage(response.msg)
+                    }                    
                 }                
                 else if(response.status == 'istyping') {
                     feedback.style.display = 'inline';
