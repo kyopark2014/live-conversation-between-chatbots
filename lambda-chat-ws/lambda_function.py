@@ -134,7 +134,7 @@ def subscribe_redis(connectionId, redis_client, channel):
     print('successfully subscribed for channel: ', channel)    
             
     for message in pubsub.listen():
-        print('message: ', json.loads(message))
+        print('message: ', message)
                 
         if message['data'] != 1:            
             received_data = message['data'].encode('utf-8').decode('unicode_escape')
