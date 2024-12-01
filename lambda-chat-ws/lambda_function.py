@@ -148,11 +148,6 @@ def subscribe_redis(redis_client, channel):
             # }
             # print('debug: ', json.dumps(result))
             # sendMessage(connectionId, result)
-
-def start_redis_pubsub(userId):
-    print('start subscribing redis.')
-    channel = userId 
-    subscribe_redis(redis_client, channel)
     
 def initiate_redis():
     global redis_client
@@ -167,6 +162,11 @@ def initiate_redis():
         raise Exception ("Not able to request to redis")        
     
 initiate_redis()
+
+def start_redis_pubsub(chatId):
+    print('start subscribing redis.')
+    channel = chatId 
+    subscribe_redis(redis_client, channel)
 
 # Secret
 secretsmanager = boto3.client('secretsmanager')
@@ -2570,8 +2570,11 @@ def lambda_handler(event, context):
                 jsonBody = json.loads(body)
                 print('request body: ', json.dumps(jsonBody))
                 
-                # if type == 'initiate':
-                #     start_redis_pubsub(userId)
+                type = jsonBody['type']
+                if type == 'initiate':
+                    chatId  = jsonBody['chat_id']
+                    print('chatId: ', chatId)
+                    start_redis_pubsub(chatId)
 
                 requestId  = jsonBody['request_id']
                 try:

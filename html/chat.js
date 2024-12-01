@@ -117,6 +117,13 @@ function connect(endpoint, type) {
         console.log('connected...');
         isConnected = true;
 
+        // request initiation of redis
+        let requestObj = {
+            "chat_id": chatId,
+            "type": "initiate"
+        }
+        webSocket.send(JSON.stringify(requestObj));
+
         if(undelivered.size() && retry_count>0) {
             let keys = undelivered.getKeys();
             console.log('retry undelived messags!');            
