@@ -347,29 +347,31 @@ function onSend(e) {
         let requestId = uuidv4();
         addSentMessage(requestId, timestr, message.value);
         
-        if(conversationType=='qa-knowledge-base') {
-            type = "text",
-            conv_type = 'qa-knowledge-base',
-            rag_type = 'knowledge-base',
-            function_type = 'rag'
-        }
-        else {
-            type = "text",
-            conv_type = conversationType,
-            rag_type = ''
-            function_type = ''
-        }
+        type = "text",
+        conv_type = conversationType,
+        rag_type = ''
+        function_type = ''
         
+        // sendMessage({
+        //     "user_id": userId,
+        //     "request_id": requestId,
+        //     "request_time": requestTime,        
+        //     "type": type,
+        //     "body": message.value,
+        //     "conv_type": conv_type,
+        //     "rag_type": rag_type,
+        //     "multi_region": multi_mode,
+        //     "grade": grade_mode
+        // })
+
+        type = "conversation"
         sendMessage({
+            "type": type,
+            "chat_id": chatId,
             "user_id": userId,
             "request_id": requestId,
-            "request_time": requestTime,        
-            "type": type,
-            "body": message.value,
-            "conv_type": conv_type,
-            "rag_type": rag_type,
-            "multi_region": multi_mode,
-            "grade": grade_mode
+            "request_time": requestTime,
+            "body": message.value
         })
         
         sentTime.put(requestId, current);

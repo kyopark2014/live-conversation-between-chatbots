@@ -1654,56 +1654,7 @@ def get_docs_from_knowledge_base(documents):
             )
         )    
     return relevant_docs
-                
-def get_answer_using_knowledge_base(chat, text, connectionId, requestId):    
-    global reference_docs
-    
-    msg = reference = ""
-    top_k = numberOfDocs
-    relevant_docs = []
-    if knowledge_base_id:    
-        isTyping(connectionId, requestId, "retrieving...")
-        
-        retriever = AmazonKnowledgeBasesRetriever(
-            knowledge_base_id=knowledge_base_id, 
-            retrieval_config={"vectorSearchConfiguration": {
-                "numberOfResults": top_k,
-                "overrideSearchType": "HYBRID"   # SEMANTIC
-            }},
-        )
-        
-        docs = retriever.invoke(text)
-        # print('docs: ', docs)
-        print('--> docs from knowledge base')
-        for i, doc in enumerate(docs):
-            print_doc(i, doc)
-        
-        relevant_docs = get_docs_from_knowledge_base(docs)
-        
-    # grading
-    isTyping(connectionId, requestId, "grading...")
-    
-    filtered_docs = grade_documents(text, relevant_docs)    
-    
-    filtered_docs = check_duplication(filtered_docs) # duplication checker
-            
-    relevant_context = ""
-    for i, document in enumerate(filtered_docs):
-        print(f"{i}: {document}")
-        if document.page_content:
-            content = document.page_content
-            
-        relevant_context = relevant_context + content + "\n\n"
-        
-    print('relevant_context: ', relevant_context)
-
-    msg = query_using_RAG_context(connectionId, requestId, chat, relevant_context, text)
-    
-    if len(filtered_docs):
-        reference_docs += filtered_docs 
-            
-    return msg
-    
+                    
 def traslation(chat, text, input_language, output_language):
     system = (
         "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
@@ -2361,23 +2312,9 @@ def getResponse(connectionId, jsonBody):
                 if conv_type == 'normal':      # normal
                     msg = general_conversation(connectionId, requestId, chat, text)      
                     
-                elif conv_type == 'qa-knowledge-base':   # RAG - Vector
-                    print(f'rag_type: {rag_type}')
-                    msg = get_answer_using_knowledge_base(chat, text, connectionId, requestId)
-                
                 elif conv_type == 'agent-executor':
                     msg = run_agent_executor(connectionId, requestId, text)
-                
-                elif conv_type == 'agent-executor-chat':
-                    revised_question = revise_question(connectionId, requestId, chat, text)     
-                    print('revised_question: ', revised_question)  
-                    msg = run_agent_executor(connectionId, requestId, revised_question)
-                    
-                elif conv_type == "translation":
-                    msg = translate_text(chat, text) 
-                elif conv_type == "grammar":
-                    msg = check_grammer(chat, text)  
-                                    
+                                                    
                 # token counter
                 if debugMessageMode=='true':
                     token_counter_input = chat.get_num_tokens(text)
@@ -2569,25 +2506,59 @@ def lambda_handler(event, context):
         
                 jsonBody = json.loads(body)
                 print('request body: ', json.dumps(jsonBody))
+                print('type: ', jsonBody['type'])
                 
                 type = jsonBody['type']
                 if type == 'initiate':
-                    chatId  = jsonBody['chat_id']
+                    chatId  = jsonBody['chatId']
                     print('chatId: ', chatId)
                     start_redis_pubsub(chatId)
+                elif type == 'conversation':
+                    chatId = jsonBody['chat_id']
+                    # print('chatId: ', chatId)
+                    userId  = jsonBody['user_id']
+                    # print('userId: ', userId)
+                    requestId  = jsonBody['request_id']
+                    # print('requestId: ', requestId)
+                    requestTime  = jsonBody['request_time']
+                    # print('requestTime: ', requestTime)
+                    body = jsonBody['body']
+                    # print('body: ', body)
+                    
+                    msg = {
+                        "type": type,
+                        "chat_id": chatId,
+                        "user_id": userId,
+                        "request_id": requestId,
+                        "request_time": requestTime,
+                        "body": body
+                    }
+                    print('msg: ', json.dumps(msg))
+                    
+                    # publish to redis
+                    channel = f"{chatId}"
+                    try: 
+                        redis_client.publish(channel=channel, message=json.dumps(msg))
+                        print('successfully published: ', json.dumps(msg))
+                    
+                    except Exception:
+                        err_msg = traceback.format_exc()
+                        print('error message: ', err_msg)                    
+                        raise Exception ("Not able to request to redis")
+                    
+                else:                
+                    requestId  = jsonBody['request_id']
+                    try:
+                        msg, reference = getResponse(connectionId, jsonBody)
 
-                requestId  = jsonBody['request_id']
-                try:
-                    msg, reference = getResponse(connectionId, jsonBody)
+                        print('msg+reference: ', msg+reference)
+                                            
+                    except Exception:
+                        err_msg = traceback.format_exc()
+                        print('err_msg: ', err_msg)
 
-                    print('msg+reference: ', msg+reference)
-                                        
-                except Exception:
-                    err_msg = traceback.format_exc()
-                    print('err_msg: ', err_msg)
-
-                    sendErrorMessage(connectionId, requestId, err_msg)    
-                    raise Exception ("Not able to send a message")
+                        sendErrorMessage(connectionId, requestId, err_msg)    
+                        raise Exception ("Not able to send a message")
 
     return {
         'statusCode': 200
