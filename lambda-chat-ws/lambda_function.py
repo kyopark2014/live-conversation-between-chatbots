@@ -139,16 +139,16 @@ def subscribe_redis(connectionId, redis_client, channel):
         if message['data'] != 1:            
             received_msg = message['data'].encode('utf-8').decode('unicode_escape')
             print('received_msg: ', received_msg)    
-            
+
             msg = json.loads(received_msg)
-            
-            requestId = msg['request_id']
-            body = msg['body']
-                        
+
             result = {
                 'type': 'conversation',
-                'request_id': requestId,
-                'msg': body,
+                'receiver_id': msg['request_id'],
+                'user_id': msg['user_id'],
+                'request_id': msg['receiver_id'],
+                'request_time': msg['request_time'],
+                'msg': msg['body'],
                 'status': 'completed'
             }
             print('received message: ', json.dumps(result))
