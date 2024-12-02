@@ -140,10 +140,10 @@ def subscribe_redis(connectionId, redis_client, channel):
             received_data = message['data'].encode('utf-8').decode('raw_unicode_escape')
             print('received_data: ', received_data)    
             
-            converted_data = received_data.replace("\n","")
-            print('converted_data: ', converted_data)    
+            #converted_data = received_data.replace("\n","")
+            #print('converted_data: ', converted_data)    
 
-            data = json.loads(converted_data)
+            data = json.loads(received_data)
 
             result = {
                 'type': 'conversation',
