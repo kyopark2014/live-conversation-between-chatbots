@@ -2487,6 +2487,8 @@ def lambda_handler(event, context):
             if body[0:8] == "__ping__":
                 print('body: ', body)
                 sendMessage(connectionId, "__pong__")
+                
+                start_redis_pubsub(connectionId, userId)
             else:
                 print('connectionId: ', connectionId)
                 print('routeKey: ', routeKey)
