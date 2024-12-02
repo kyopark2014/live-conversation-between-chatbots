@@ -600,21 +600,14 @@ def isKorean(text):
         print('Not Korean: ', word_kor)
         return False
 
-def general_conversation(connectionId, requestId, chat, query):
-    global time_for_inference, history_length, token_counter_history    
-    time_for_inference = history_length = token_counter_history = 0
-    
-    if debugMessageMode == 'true':  
-        start_time_for_inference = time.time()
-    
-    if isKorean(query)==True :
-        system = (
-            "다음의 Human과 Assistant의 친근한 이전 대화입니다. Assistant은 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
-        )
-    else: 
-        system = (
-            "Using the following conversation, answer friendly for the newest question. If you don't know the answer, just say that you don't know, don't try to make up an answer. You will be acting as a thoughtful advisor."
-        )
+def live_conversation(connectionId, requestId, chat, query):
+    system = (
+        "당신은 대화를 잘 풀어나가는 대화 전문가입니다."
+        "이전 대화로부터 새로운 대화 주제를 찾아서 끊어없는 대화가 이루어지게 합니다."
+        "조금 황당하더라도 풍부한 상상력으로 대화를 이끌어 나갑니다."
+        "대화를 통해 새로운 아이디어나 창작을 할 수 있어야 합니다."
+        "상대방에게 재미있는 생각을 제안하고 끊임없이 답변을 요청합니다."
+    )
     
     human = "{input}"
     
@@ -626,7 +619,7 @@ def general_conversation(connectionId, requestId, chat, query):
                 
     chain = prompt | chat    
     try: 
-        isTyping(connectionId, requestId, "")  
+        # isTyping(connectionId, requestId, "")  
         stream = chain.invoke(
             {
                 "history": history,
@@ -644,26 +637,6 @@ def general_conversation(connectionId, requestId, chat, query):
         sendErrorMessage(connectionId, requestId, err_msg)    
         raise Exception ("Not able to request to LLM")
 
-    if debugMessageMode == 'true':  
-        chat_history = ""
-        for dialogue_turn in history:
-            #print('type: ', dialogue_turn.type)
-            #print('content: ', dialogue_turn.content)
-            
-            dialog = f"{dialogue_turn.type}: {dialogue_turn.content}\n"            
-            chat_history = chat_history + dialog
-                
-        history_length = len(chat_history)
-        print('chat_history length: ', history_length)
-        
-        token_counter_history = 0
-        if chat_history:
-            token_counter_history = chat.get_num_tokens(chat_history)
-            print('token_size of history: ', token_counter_history)
-        
-        end_time_for_inference = time.time()
-        time_for_inference = end_time_for_inference - start_time_for_inference
-        
     return msg
     
 def get_summary(chat, docs):    
@@ -2322,7 +2295,7 @@ def getResponse(connectionId, jsonBody):
                 msg  = "The chat memory was intialized in this session."
             else:       
                 if conv_type == 'normal':      # normal
-                    msg = general_conversation(connectionId, requestId, chat, text)      
+                    msg = live_conversation(connectionId, requestId, chat, text)      
                     
                 elif conv_type == 'agent-executor':
                     msg = run_agent_executor(connectionId, requestId, text)
@@ -2527,7 +2500,7 @@ def lambda_handler(event, context):
                     userId  = jsonBody['user_id']
                     print('userId: ', userId)                    
                     start_redis_pubsub(connectionId, userId)
-                elif type == 'conversation':         
+                elif type == 'conversation':                    
                     receiverId  = jsonBody['receiver_id']
                     print('receiverId: ', receiverId)                    
                     userId  = jsonBody['user_id']
@@ -2539,6 +2512,7 @@ def lambda_handler(event, context):
                     body = jsonBody['body']
                     # print('body: ', body)
                     
+                    isTyping(connectionId, requestId, "")
                     data = {
                         "type": type,
                         "receiver_id": receiverId,
