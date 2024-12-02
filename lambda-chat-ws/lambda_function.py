@@ -172,7 +172,6 @@ def initiate_redis():
 initiate_redis()
 
 def start_redis_pubsub(connectionId, userId):
-    print('start subscribing redis.')
     channel = userId 
     subscribe_redis(connectionId, redis_client, channel)
 
@@ -2500,7 +2499,9 @@ def lambda_handler(event, context):
                 type = jsonBody['type']
                 if type == 'initiate':
                     userId  = jsonBody['user_id']
-                    print('userId: ', userId)                    
+                    print('userId: ', userId)      
+                    
+                    print('start subscribing redis.')                  
                     start_redis_pubsub(connectionId, userId)
                 elif type == 'conversation':                    
                     receiverId  = jsonBody['receiver_id']
