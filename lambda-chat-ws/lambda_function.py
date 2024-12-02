@@ -137,7 +137,7 @@ def subscribe_redis(connectionId, redis_client, channel):
         print('message: ', message)
                 
         if message['data'] != 1:            
-            received_data = message['data'].encode('utf-8').decode('unicode_escape')
+            received_data = message['data'].encode('utf-8').decode('raw_unicode_escape')
             print('received_data: ', received_data)    
             
             converted_data = received_data.replace("\n","")
