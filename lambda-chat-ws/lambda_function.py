@@ -63,6 +63,7 @@ embeddingModelArn = os.environ.get('embeddingModelArn')
 parsingModelArn = os.environ.get('parsingModelArn')
 collectionArn = os.environ.get('collectionArn')
 vectorIndexName = os.environ.get('vectorIndexName')
+sqsUrl = os.environ.get('sqsUrl')
 
 selected_chat = 0
 selected_multimodal = 0

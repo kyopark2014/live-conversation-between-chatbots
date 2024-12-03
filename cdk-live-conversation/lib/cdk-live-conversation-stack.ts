@@ -404,6 +404,30 @@ export class CdkLiveConversationStack extends cdk.Stack {
       value: redisCache.attrRedisEndpointPort,
     });
 
+    // SQS
+    let dlq = new sqs.Queue(this, `Dlq-for-${projectName}`, {
+      visibilityTimeout: cdk.Duration.seconds(600),
+      queueName: `dlq-s3-event-for-${projectName}-${i}.fifo`,  
+      fifo: true,
+      contentBasedDeduplication: false,
+      deliveryDelay: cdk.Duration.millis(0),
+      retentionPeriod: cdk.Duration.days(14)
+    });
+
+    // SQS for S3 event (fifo) 
+    const queue = new sqs.Queue(this, `MessageQueuee-for-${projectName}`, {
+      visibilityTimeout: cdk.Duration.seconds(600),
+      queueName: `message-queue-for-${projectName}.fifo`,  
+      fifo: true,
+      contentBasedDeduplication: false,
+      deliveryDelay: cdk.Duration.millis(0),
+      retentionPeriod: cdk.Duration.days(2),
+      deadLetterQueue: {
+        maxReceiveCount: 1,
+        queue: dlq
+      }
+    });
+    
     // DynamoDB for call log
     const callLogTableName = `db-call-log-for-${projectName}`;
     const callLogDataTable = new dynamodb.Table(this, `db-call-log-for-${projectName}`, {
@@ -814,12 +838,15 @@ export class CdkLiveConversationStack extends cdk.Stack {
         collectionArn: collectionArn,
         vectorIndexName: vectorIndexName,
         redisAddress: redisCache.attrRedisEndpointAddress,
-        redisPort: redisCache.attrRedisEndpointPort
+        redisPort: redisCache.attrRedisEndpointPort,
+        sqsUrl: queue.queueUrl,
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
     s3Bucket.grantReadWrite(lambdaChatWebsocket); // permission for s3
     callLogDataTable.grantReadWriteData(lambdaChatWebsocket); // permission for dynamo 
+    queue.grantSendMessages(lambdaChatWebsocket); // permission for sqs
+    lambdaChatWebsocket.addEventSource(new SqsEventSource(queue));
     
     if(debug) {
       new cdk.CfnOutput(this, 'function-chat-ws-arn', {
