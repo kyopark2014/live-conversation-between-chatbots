@@ -2491,6 +2491,10 @@ def lambda_handler(event, context):
             #print("data[0:8]: ", body[0:8])
             if body[0:8] == "__ping__":
                 print('body: ', body)
+                
+                pos = body.rfind('__')+2
+                userId = body[pos:len(body)]                
+                print('userId: ', userId)                
                 sendMessage(connectionId, "__pong__")
                 
                 if userId in list_redis:
