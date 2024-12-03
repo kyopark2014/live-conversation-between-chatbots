@@ -171,7 +171,13 @@ function connect(endpoint, type) {
                     
                     console.log('response: ', response);                    
                     if(response.type == 'conversation') {
-                        addReceivedMessage(response.request_id, response.body);
+                        if(isResponsed.get(response.request_id)) {
+                            console.log("duplicated response!")
+                        }
+                        else { 
+                            addReceivedMessage(response.request_id, response.body);
+                            isResponsed.put(response.request_id, response.body);
+                        }
 
                         if(message.value == '') { 
                             console.log('query next message: ', response.body);
