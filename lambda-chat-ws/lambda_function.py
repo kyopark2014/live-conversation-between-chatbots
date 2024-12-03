@@ -2535,7 +2535,7 @@ def lambda_handler(event, context):
                     body = jsonBody['body']
                     # print('body: ', body)
                     
-                    isTyping(connectionId, requestId, "")
+                    # isTyping(connectionId, requestId, "")
                     data = {
                         "type": type,
                         "receiver_id": receiverId,
