@@ -172,8 +172,11 @@ function connect(endpoint, type) {
                     console.log('response: ', response);                    
                     if(response.type == 'conversation') {
                         addReceivedMessage(response.request_id, response.body);
-                        console.log('query next message: ', response.body);
-                        queryNextMessage(response.body);
+
+                        if(message.value == '') { 
+                            console.log('query next message: ', response.body);
+                            queryNextMessage(response.body);
+                        }
                     }   
                     else {
                         console.log('message.value: ', message.value);
