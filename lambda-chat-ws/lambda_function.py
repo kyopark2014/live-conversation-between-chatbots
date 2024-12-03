@@ -2499,10 +2499,12 @@ def lambda_handler(event, context):
                 
                 if userId in list_redis:
                     print('registered in redis: ', userId)
-                else:
+                elif userId:
                     print('not registered in redis: ', userId)
                     print('start subscribing redis again.')
                     start_redis_pubsub(connectionId, userId)
+                else:
+                    print('userId is not defined.')
                 
             else:
                 print('connectionId: ', connectionId)
