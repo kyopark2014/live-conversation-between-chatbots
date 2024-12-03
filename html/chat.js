@@ -182,18 +182,19 @@ function connect(endpoint, type) {
                                 console.log('query next message: ', response.body);
                                 queryNextMessage(response.body);
                             }
-                            else {
-                                console.log('message.value: ', message.value);
-                                if(message.value == '') {    
-                                    console.log('auto generated message: ', response.body);
-                                    sendConversationMessage(response.body);
-                                }
-                                else {
-                                    console.log('stop auto generated message');
-                                }
-                            }
+                            
                         }                        
-                    }                       
+                    }  
+                    else {
+                        console.log('message.value: ', message.value);
+                        if(message.value == '') {    
+                            console.log('auto generated message: ', response.body);
+                            sendConversationMessage(response.body);
+                        }
+                        else {
+                            console.log('stop auto generated message');
+                        }
+                    }                     
                 }                
                 else if(response.status == 'istyping') {
                     feedback.style.display = 'inline';
