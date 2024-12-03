@@ -351,7 +351,8 @@ function sendConversationMessage(message) {
     addSentMessage(requestId, timestr, message);        
 }
 
-calleeName.textContent = "Chatbot";  
+// calleeName.textContent = "Chatbot";  
+calleeName.textContent = userId;  
 calleeId.textContent = "AWS";
 
 if(langstate=='korean') {
@@ -538,7 +539,8 @@ function addSentMessageForSummary(requestId, timestr, text) {
 
 function addReceivedMessage(requestId, msg) {
     // console.log("add received message: "+msg);
-    sender = "Chatbot"
+    // sender = "Chatbot"
+    sender = receiverId
 
     let idx = index;
 
