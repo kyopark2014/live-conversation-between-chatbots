@@ -407,7 +407,7 @@ export class CdkLiveConversationStack extends cdk.Stack {
     // SQS
     let dlq = new sqs.Queue(this, `Dlq-for-${projectName}`, {
       visibilityTimeout: cdk.Duration.seconds(600),
-      queueName: `dlq-s3-event-for-${projectName}-${i}.fifo`,  
+      queueName: `dlq-for-${projectName}.fifo`,  
       fifo: true,
       contentBasedDeduplication: false,
       deliveryDelay: cdk.Duration.millis(0),
