@@ -85,6 +85,7 @@ minDocSimilarity = 400
 projectName = os.environ.get('projectName')
 maxOutputTokens = 4096
 data_source_id = ""
+list_redis = []
 
 multi_region_models = [   # claude sonnet 3.0
     {   
@@ -2492,7 +2493,13 @@ def lambda_handler(event, context):
                 print('body: ', body)
                 sendMessage(connectionId, "__pong__")
                 
-                start_redis_pubsub(connectionId, userId)
+                if userId in list_redis:
+                    print('registered in redis: ', userId)
+                else:
+                    print('not registered in redis: ', userId)
+                    print('start subscribing redis again.')
+                    start_redis_pubsub(connectionId, userId)
+                
             else:
                 print('connectionId: ', connectionId)
                 print('routeKey: ', routeKey)
@@ -2508,6 +2515,8 @@ def lambda_handler(event, context):
                     
                     print('start subscribing redis.')                  
                     start_redis_pubsub(connectionId, userId)
+                    
+                    list_redis.append(userId)
                 elif type == 'conversation':                    
                     receiverId  = jsonBody['receiver_id']
                     print('receiverId: ', receiverId)                    
